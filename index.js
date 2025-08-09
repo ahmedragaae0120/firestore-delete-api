@@ -1,42 +1,37 @@
-const express = require("express");
-const cors = require("cors");
-const admin = require("firebase-admin");
+const express = require('express');
+const admin = require('firebase-admin');
 
 const app = express();
-app.use(cors());
 app.use(express.json());
 
-// مفتاح Firebase Admin SDK
-const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
-
+// تهيئة Admin SDK
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(require('./serviceAccountKey.json'))
 });
 
-const db = admin.firestore();
+const SECRET_KEY = JSON.parse(process.env.SERVICE_ACCOUNT_KEY); // نفس المفتاح اللي بتحقق منه
 
-// مفتاح API بسيط للتحقق من الـ Admin
-const ADMIN_KEY = "YOUR_SECRET_KEY";
+// API لحذف الحساب
+app.delete('/delete', async (req, res) => {
+    const { collection, docId } = req.body;
 
-app.delete("/delete", async (req, res) => {
+
+
     try {
-        const { key, collection, docId } = req.body;
+        // 1. حذف الوثيقة من Firestore
+        await admin.firestore().collection(collection).doc(docId).delete();
 
-        if (key !== ADMIN_KEY) {
-            return res.status(403).json({ error: "Unauthorized" });
-        }
+        // 2. حذف اليوزر من Firebase Auth
+        await admin.auth().deleteUser(docId);
 
-        await db.collection(collection).doc(docId).delete();
-        res.json({ message: "Document deleted successfully" });
-
+        res.json({ message: "User account and Firestore document deleted successfully" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-const PORT = process.env.PORT || 5000;
-app.get('/', (req, res) => {
-    res.send('Server is running 🚀');
+// بدء السيرفر
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
-
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
