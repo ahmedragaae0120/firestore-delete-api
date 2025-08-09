@@ -4,12 +4,14 @@ const admin = require('firebase-admin');
 const app = express();
 app.use(express.json());
 
-// تهيئة Admin SDK
-admin.initializeApp({
-    credential: admin.credential.cert(require('./serviceAccountKey.json'))
-});
 
 const SECRET_KEY = JSON.parse(process.env.SERVICE_ACCOUNT_KEY); // نفس المفتاح اللي بتحقق منه
+
+// تهيئة Admin SDK
+admin.initializeApp({
+    credential: admin.credential.cert(SECRET_KEY)
+});
+
 
 // API لحذف الحساب
 app.delete('/delete', async (req, res) => {
