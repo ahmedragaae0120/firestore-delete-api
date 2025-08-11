@@ -6,26 +6,23 @@ const app = express();
 
 // تفعيل CORS لكل الطلبات
 app.use(cors({
-    origin: '*', // أو حدد دومين معين
+    origin: '*', // ممكن تحدد الدومين بتاعك بدل *
     methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// التأكد من قراءة JSON
-app.use(express.json());
-
-
-
-const SECRET_KEY = JSON.parse(process.env.SERVICE_ACCOUNT_KEY); // نفس المفتاح اللي بتحقق منه
-
-// تهيئة Admin SDK
-admin.initializeApp({
-    credential: admin.credential.cert(SECRET_KEY)
-})
-
-// معالجة طلبات OPTIONS (Preflight)
+// السماح بطلبات OPTIONS (Preflight)
 app.options('*', cors());
 
+// قراءة JSON من البودي
+app.use(express.json());
+
+const SECRET_KEY = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
+
+// تهيئة Firebase Admin SDK
+admin.initializeApp({
+    credential: admin.credential.cert(SECRET_KEY)
+});
 
 // API لحذف الحساب
 app.delete('/delete', async (req, res) => {
@@ -36,10 +33,10 @@ app.delete('/delete', async (req, res) => {
     }
 
     try {
-        // 1. حذف الوثيقة من Firestore
+        // حذف الوثيقة من Firestore
         await admin.firestore().collection(collection).doc(docId).delete();
 
-        // 2. حذف اليوزر من Firebase Auth
+        // حذف اليوزر من Firebase Auth
         await admin.auth().deleteUser(docId);
 
         res.json({ message: "User account and Firestore document deleted successfully" });
@@ -48,7 +45,7 @@ app.delete('/delete', async (req, res) => {
     }
 });
 
-// بدء السيرفر
+// تشغيل السيرفر
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
