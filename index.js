@@ -6,17 +6,18 @@ const app = express();
 
 // تفعيل CORS لكل الطلبات
 app.use(cors({
-    origin: '*', // ممكن تحدد الدومين بتاعك بدل *
+    origin: '*', // ممكن تحدد الدومين بتاعك بدل النجمة
     methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// السماح بطلبات OPTIONS (Preflight)
+// دعم طلبات OPTIONS (Preflight)
 app.options('*', cors());
 
-// قراءة JSON من البودي
+// قراءة JSON من الطلبات
 app.use(express.json());
 
+// قراءة مفتاح Firebase من المتغيرات البيئية
 const SECRET_KEY = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
 
 // تهيئة Firebase Admin SDK
@@ -24,7 +25,7 @@ admin.initializeApp({
     credential: admin.credential.cert(SECRET_KEY)
 });
 
-// API لحذف الحساب
+// Endpoint لحذف المستخدم
 app.delete('/delete', async (req, res) => {
     const { collection, docId } = req.body;
 
@@ -36,7 +37,7 @@ app.delete('/delete', async (req, res) => {
         // حذف الوثيقة من Firestore
         await admin.firestore().collection(collection).doc(docId).delete();
 
-        // حذف اليوزر من Firebase Auth
+        // حذف المستخدم من Firebase Auth
         await admin.auth().deleteUser(docId);
 
         res.json({ message: "User account and Firestore document deleted successfully" });
